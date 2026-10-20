@@ -109,7 +109,7 @@ public final class Messages {
         if (millis < 0) {
             return raw("time.forever");
         }
-        long seconds = Math.max(0, millis / 1000);
+        long seconds = Math.max(0, (millis + 500) / 1000);
         long days = seconds / 86400;
         long hours = seconds % 86400 / 3600;
         long minutes = seconds % 3600 / 60;

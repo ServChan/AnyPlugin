@@ -117,13 +117,16 @@ public final class RestartService implements Listener {
         }
         long left = target - System.currentTimeMillis();
         long seconds = Math.max(0, (left + 999) / 1000);
+        int crossed = -1;
         for (int mark : plugin.getConfig().getIntegerList("restart.warnings")) {
-            if (seconds <= mark && lastAnnounced > mark) {
-                lastAnnounced = mark;
-                Bukkit.getServer().sendMessage(plugin.msg().get("restart.warning", p("time", plugin.msg().duration(mark * 1000L)),
-                        p("reason", reason.isEmpty() ? plugin.msg().raw("restart.no-reason") : reason)));
-                break;
+            if (seconds <= mark && mark < lastAnnounced && (crossed < 0 || mark < crossed)) {
+                crossed = mark;
             }
+        }
+        if (crossed >= 0) {
+            lastAnnounced = crossed;
+            Bukkit.getServer().sendMessage(plugin.msg().get("restart.warning", p("time", plugin.msg().duration(seconds * 1000L)),
+                    p("reason", reason.isEmpty() ? plugin.msg().raw("restart.no-reason") : reason)));
         }
         long barFrom = plugin.getConfig().getLong("restart.bossbar-seconds", 300);
         if (seconds <= barFrom) {

@@ -1,0 +1,44 @@
+default-group: default
+
+groups:
+  default:
+    weight: 0
+    prefix: "<gray>"
+    suffix: ""
+    name-color: gray
+    parents: []
+    permissions:
+      - anyplugin.player
+
+  friend:
+    weight: 10
+    prefix: "<green>[Друг] "
+    suffix: ""
+    name-color: white
+    parents: [default]
+    permissions:
+      - anyplugin.homes.5
+      - anyplugin.craft
+      - anyplugin.enderchest
+      - anyplugin.hat
+      - anyplugin.nick
+      - anyplugin.chat.color
+
+  moder:
+    weight: 50
+    prefix: "<aqua>[Модер] "
+    suffix: ""
+    name-color: aqua
+    parents: [friend]
+    permissions:
+      - anyplugin.moderator
+      - anyplugin.homes.10
+
+  admin:
+    weight: 100
+    prefix: "<red>[Админ] "
+    suffix: ""
+    name-color: red
+    parents: [moder]
+    permissions:
+      - "*"

@@ -1,0 +1,401 @@
+name: AnyPlugin
+version: '${version}'
+main: org.lts.anyplugin.AnyPlugin
+api-version: '26.3'
+folia-supported: true
+authors: [LTS]
+description: Everything a small friends server needs - permissions, chat, homes, warps, teleports, tab, moderation
+softdepend: [Vault, PlaceholderAPI, LuckPerms]
+permissions:
+  anyplugin.spawn:
+    default: false
+  anyplugin.back:
+    default: false
+  anyplugin.back.death:
+    default: false
+  anyplugin.home:
+    default: false
+  anyplugin.sethome:
+    default: false
+  anyplugin.delhome:
+    default: false
+  anyplugin.warp:
+    default: false
+  anyplugin.tpa:
+    default: false
+  anyplugin.tpahere:
+    default: false
+  anyplugin.tptoggle:
+    default: false
+  anyplugin.rtp:
+    default: false
+  anyplugin.msg:
+    default: false
+  anyplugin.ignore:
+    default: false
+  anyplugin.msgtoggle:
+    default: false
+  anyplugin.afk:
+    default: false
+  anyplugin.list:
+    default: false
+  anyplugin.ping:
+    default: false
+  anyplugin.seen:
+    default: false
+  anyplugin.playtime:
+    default: false
+  anyplugin.rules:
+    default: false
+  anyplugin.motd:
+    default: false
+  anyplugin.help:
+    default: false
+  anyplugin.report:
+    default: false
+  anyplugin.warnings:
+    default: false
+  anyplugin.chat.item:
+    default: false
+  anyplugin.suicide:
+    default: false
+  anyplugin.trash:
+    default: false
+  anyplugin.realname:
+    default: false
+  anyplugin.serverinfo:
+    default: false
+  anyplugin.broadcast:
+    default: false
+  anyplugin.clearchat:
+    default: false
+  anyplugin.clearchat.exempt:
+    default: false
+  anyplugin.socialspy:
+    default: false
+  anyplugin.commandspy:
+    default: false
+  anyplugin.staffchat:
+    default: false
+  anyplugin.chat.color:
+    default: false
+  anyplugin.chat.bypass-spam:
+    default: false
+  anyplugin.ban:
+    default: false
+  anyplugin.unban:
+    default: false
+  anyplugin.mute:
+    default: false
+  anyplugin.unmute:
+    default: false
+  anyplugin.warn:
+    default: false
+  anyplugin.unwarn:
+    default: false
+  anyplugin.warnings.others:
+    default: false
+  anyplugin.kick:
+    default: false
+  anyplugin.history:
+    default: false
+  anyplugin.vanish:
+    default: false
+  anyplugin.vanish.see:
+    default: false
+  anyplugin.invsee:
+    default: false
+  anyplugin.enderchest:
+    default: false
+  anyplugin.enderchest.others:
+    default: false
+  anyplugin.freeze:
+    default: false
+  anyplugin.reports:
+    default: false
+  anyplugin.notify.punish:
+    default: false
+  anyplugin.whois:
+    default: false
+  anyplugin.playtime.others:
+    default: false
+  anyplugin.spawn.others:
+    default: false
+  anyplugin.tphere:
+    default: false
+  anyplugin.tppos:
+    default: false
+  anyplugin.top:
+    default: false
+  anyplugin.fly:
+    default: false
+  anyplugin.gamemode:
+    default: false
+  anyplugin.gamemode.survival:
+    default: false
+  anyplugin.gamemode.adventure:
+    default: false
+  anyplugin.gamemode.spectator:
+    default: false
+  anyplugin.heal:
+    default: false
+  anyplugin.feed:
+    default: false
+  anyplugin.near:
+    default: false
+  anyplugin.ignore.exempt:
+    default: false
+  anyplugin.msgtoggle.bypass:
+    default: false
+  anyplugin.tptoggle.bypass:
+    default: false
+  anyplugin.teleport.bypass-warmup:
+    default: false
+  anyplugin.home.others:
+    default: false
+  anyplugin.commandspy.exempt:
+    default: false
+  anyplugin.afk.kick-exempt:
+    default: false
+  anyplugin.perm:
+    default: false
+  anyplugin.manage:
+    default: false
+  anyplugin.setspawn:
+    default: false
+  anyplugin.setwarp:
+    default: false
+  anyplugin.delwarp:
+    default: false
+  anyplugin.ipban:
+    default: false
+  anyplugin.maintenance:
+    default: false
+  anyplugin.maintenance.bypass:
+    default: false
+  anyplugin.restart:
+    default: false
+  anyplugin.item:
+    default: false
+  anyplugin.more:
+    default: false
+  anyplugin.skull:
+    default: false
+  anyplugin.time:
+    default: false
+  anyplugin.weather:
+    default: false
+  anyplugin.god:
+    default: false
+  anyplugin.god.others:
+    default: false
+  anyplugin.fly.others:
+    default: false
+  anyplugin.speed:
+    default: false
+  anyplugin.speed.others:
+    default: false
+  anyplugin.heal.others:
+    default: false
+  anyplugin.feed.others:
+    default: false
+  anyplugin.repair:
+    default: false
+  anyplugin.repair.all:
+    default: false
+  anyplugin.hat:
+    default: false
+  anyplugin.craft:
+    default: false
+  anyplugin.anvil:
+    default: false
+  anyplugin.stonecutter:
+    default: false
+  anyplugin.grindstone:
+    default: false
+  anyplugin.smithing:
+    default: false
+  anyplugin.loom:
+    default: false
+  anyplugin.cartography:
+    default: false
+  anyplugin.tpall:
+    default: false
+  anyplugin.rtp.others:
+    default: false
+  anyplugin.nick:
+    default: false
+  anyplugin.nick.color:
+    default: false
+  anyplugin.nick.others:
+    default: false
+  anyplugin.gamemode.creative:
+    default: false
+  anyplugin.gamemode.others:
+    default: false
+  anyplugin.invsee.edit:
+    default: false
+  anyplugin.enderchest.others.edit:
+    default: false
+  anyplugin.vanish.others:
+    default: false
+  anyplugin.punish.exempt:
+    default: false
+  anyplugin.spawnprotection.bypass:
+    default: false
+  anyplugin.starterkit.give:
+    default: false
+  anyplugin.whois.ip:
+    default: false
+  anyplugin.home.bypass-world:
+    default: false
+  anyplugin.teleport.bypass-cooldown:
+    default: false
+  anyplugin.warp.all:
+    default: false
+  anyplugin.warp.others:
+    default: false
+  anyplugin.homes.unlimited:
+    default: false
+  anyplugin.afk.exempt:
+    default: false
+  anyplugin.gui:
+    default: false
+  anyplugin.player:
+    default: true
+    children:
+      anyplugin.spawn: true
+      anyplugin.back: true
+      anyplugin.back.death: true
+      anyplugin.home: true
+      anyplugin.sethome: true
+      anyplugin.delhome: true
+      anyplugin.warp: true
+      anyplugin.tpa: true
+      anyplugin.tpahere: true
+      anyplugin.tptoggle: true
+      anyplugin.rtp: true
+      anyplugin.msg: true
+      anyplugin.ignore: true
+      anyplugin.msgtoggle: true
+      anyplugin.afk: true
+      anyplugin.list: true
+      anyplugin.ping: true
+      anyplugin.seen: true
+      anyplugin.playtime: true
+      anyplugin.rules: true
+      anyplugin.motd: true
+      anyplugin.help: true
+      anyplugin.report: true
+      anyplugin.warnings: true
+      anyplugin.chat.item: true
+      anyplugin.suicide: true
+      anyplugin.trash: true
+      anyplugin.realname: true
+      anyplugin.serverinfo: true
+  anyplugin.moderator:
+    default: op
+    children:
+      anyplugin.player: true
+      anyplugin.broadcast: true
+      anyplugin.clearchat: true
+      anyplugin.clearchat.exempt: true
+      anyplugin.socialspy: true
+      anyplugin.commandspy: true
+      anyplugin.staffchat: true
+      anyplugin.chat.color: true
+      anyplugin.chat.bypass-spam: true
+      anyplugin.ban: true
+      anyplugin.unban: true
+      anyplugin.mute: true
+      anyplugin.unmute: true
+      anyplugin.warn: true
+      anyplugin.unwarn: true
+      anyplugin.warnings.others: true
+      anyplugin.kick: true
+      anyplugin.history: true
+      anyplugin.vanish: true
+      anyplugin.vanish.see: true
+      anyplugin.invsee: true
+      anyplugin.enderchest: true
+      anyplugin.enderchest.others: true
+      anyplugin.freeze: true
+      anyplugin.reports: true
+      anyplugin.notify.punish: true
+      anyplugin.whois: true
+      anyplugin.playtime.others: true
+      anyplugin.spawn.others: true
+      anyplugin.tphere: true
+      anyplugin.tppos: true
+      anyplugin.top: true
+      anyplugin.fly: true
+      anyplugin.gamemode: true
+      anyplugin.gamemode.survival: true
+      anyplugin.gamemode.adventure: true
+      anyplugin.gamemode.spectator: true
+      anyplugin.heal: true
+      anyplugin.feed: true
+      anyplugin.near: true
+      anyplugin.ignore.exempt: true
+      anyplugin.msgtoggle.bypass: true
+      anyplugin.tptoggle.bypass: true
+      anyplugin.teleport.bypass-warmup: true
+      anyplugin.home.others: true
+      anyplugin.commandspy.exempt: true
+      anyplugin.afk.kick-exempt: true
+  anyplugin.admin:
+    default: op
+    children:
+      anyplugin.moderator: true
+      anyplugin.perm: true
+      anyplugin.manage: true
+      anyplugin.setspawn: true
+      anyplugin.setwarp: true
+      anyplugin.delwarp: true
+      anyplugin.ipban: true
+      anyplugin.maintenance: true
+      anyplugin.maintenance.bypass: true
+      anyplugin.restart: true
+      anyplugin.item: true
+      anyplugin.more: true
+      anyplugin.skull: true
+      anyplugin.time: true
+      anyplugin.weather: true
+      anyplugin.god: true
+      anyplugin.god.others: true
+      anyplugin.fly.others: true
+      anyplugin.speed: true
+      anyplugin.speed.others: true
+      anyplugin.heal.others: true
+      anyplugin.feed.others: true
+      anyplugin.repair: true
+      anyplugin.repair.all: true
+      anyplugin.hat: true
+      anyplugin.craft: true
+      anyplugin.anvil: true
+      anyplugin.stonecutter: true
+      anyplugin.grindstone: true
+      anyplugin.smithing: true
+      anyplugin.loom: true
+      anyplugin.cartography: true
+      anyplugin.tpall: true
+      anyplugin.rtp.others: true
+      anyplugin.nick: true
+      anyplugin.nick.color: true
+      anyplugin.nick.others: true
+      anyplugin.gamemode.creative: true
+      anyplugin.gamemode.others: true
+      anyplugin.invsee.edit: true
+      anyplugin.enderchest.others.edit: true
+      anyplugin.vanish.others: true
+      anyplugin.punish.exempt: true
+      anyplugin.spawnprotection.bypass: true
+      anyplugin.starterkit.give: true
+      anyplugin.whois.ip: true
+      anyplugin.home.bypass-world: true
+      anyplugin.teleport.bypass-cooldown: true
+      anyplugin.warp.all: true
+      anyplugin.warp.others: true
+      anyplugin.homes.unlimited: true
+      anyplugin.afk.exempt: true
+      anyplugin.gui: true

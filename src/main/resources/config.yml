@@ -1,0 +1,153 @@
+language: ru
+
+modules:
+  permissions: true
+  chat: true
+  teleport: true
+  tab: true
+  utility: true
+  moderation: true
+  world: true
+  maintenance: true
+  restart: true
+  starter-kit: true
+  info: true
+  admin: true
+
+chat:
+  format: "<prefix><name><suffix><dark_gray> » <white><message>"
+  cooldown-ms: 1000
+  block-repeats: true
+  max-caps-percent: 70
+  mentions: true
+  mention-actionbar: true
+  item-tag: true
+  mute-blocks-pm: true
+  death-coordinates: true
+  log-private-messages: false
+
+staff-chat:
+  prefix: "#"
+
+teleport:
+  warmup-seconds: 3
+  tpa-timeout-seconds: 60
+  cooldowns:
+    spawn: 0
+    home: 0
+    warp: 0
+    tpa: 10
+    back: 0
+    rtp: 300
+
+spawn:
+  respawn-at-spawn: true
+  teleport-on-first-join: true
+  teleport-on-every-join: false
+
+homes:
+  default-limit: 3
+  blocked-worlds: []
+
+warps:
+  default-icon: ender_pearl
+  per-warp-permission: false
+
+rtp:
+  min-radius: 300
+  max-radius: 5000
+  center-on-spawn: true
+  attempts: 12
+  worlds: []
+  fallback-world: ""
+  allow-nether-end: false
+
+tab:
+  header-footer: true
+  update-ticks: 40
+  player-names: true
+  name-format: "<prefix><name><suffix><afk><vanish>"
+  sort-by-weight: true
+
+nametags:
+  enabled: true
+  prefix: "<prefix>"
+  suffix: "<suffix><afk>"
+
+server-list:
+  max-players: -1
+  hide-players: false
+
+afk:
+  auto-seconds: 300
+  kick-seconds: 0
+  broadcast: true
+
+utility:
+  near-default-radius: 200
+  near-max-radius: 500
+  nick-max-length: 16
+
+vanish:
+  fake-messages: true
+  block-pickup: true
+
+moderation:
+  broadcast-to-all: false
+  report-cooldown-seconds: 60
+  templates:
+    grief:
+      reason: "Гриферство"
+      duration: 7d
+    cheats:
+      reason: "Читы"
+      duration: ""
+    spam:
+      reason: "Спам в чате"
+      duration: 1h
+    insult:
+      reason: "Оскорбления"
+      duration: 3h
+  warn-actions:
+    "3": "tempmute 1h"
+    "5": "tempban 1d"
+    "7": "ban"
+  commandspy-ignore: [login, l, register, reg, changepassword]
+  freeze-allowed-commands: [msg, r, tell, w, staffchat, sc]
+
+world:
+  sleep-percentage: 30
+  pvp: true
+  creeper-block-damage: true
+  mob-explosion-block-damage: true
+  enderman-grief: true
+  fire-spread: true
+  phantoms: true
+  spawn-protection:
+    radius: 16
+    no-pvp: true
+
+maintenance:
+  allow-whitelisted: true
+
+restart:
+  daily: []
+  warnings: [900, 600, 300, 120, 60, 30, 10, 5, 4, 3, 2, 1]
+  bossbar-seconds: 300
+
+starter-kit:
+  enabled: true
+  items:
+    - stone_sword
+    - stone_pickaxe
+    - stone_axe
+    - stone_shovel
+    - bread 16
+
+announcer:
+  enabled: true
+  interval-seconds: 900
+  random: false
+
+links:
+  discord: "<gray>Наш Discord: <aqua><click:open_url:'https://discord.gg/example'>discord.gg/example</click>"

@@ -1,7 +1,6 @@
 package org.lts.anyplugin.admin;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.nio.charset.StandardCharsets;
@@ -9,14 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
-import java.util.regex.Pattern;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.configuration.Configuration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -24,8 +20,8 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 import org.lts.anyplugin.AnyPlugin;
+import org.lts.anyplugin.admin.AdminSettings.Setting;
 import org.lts.anyplugin.command.CommandRegistry;
-import org.lts.anyplugin.core.Durations;
 import org.lts.anyplugin.core.Tasks;
 import org.lts.anyplugin.moderation.Punishment;
 import org.lts.anyplugin.perms.Group;
@@ -41,14 +37,6 @@ public final class AdminChannel implements PluginMessageListener, Listener {
     public static final String CHANNEL = "anyplugin:admin";
     public static final int PROTOCOL = 1;
     private static final int MAX_INCOMING = 32_768;
-    private static final Pattern NAME = Pattern.compile("[A-Za-z0-9_]{1,16}");
-    private static final Pattern GROUP = Pattern.compile("[a-z0-9_\\-]{1,32}");
-    private static final Pattern NODE = Pattern.compile("[a-z0-9_.*\\-]{1,128}");
-    private static final Pattern WARP = Pattern.compile("[\\p{L}0-9_\\-]{1,24}");
-    private static final Pattern ITEM = Pattern.compile("[a-z0-9_]{1,64}");
-    private static final Set<String> SKIPPED_SETTINGS = Set.of("moderation.templates", "moderation.warn-actions", "links");
-    private static final Set<String> RESTART_SETTINGS = Set.of("tab.update-ticks", "announcer.enabled", "announcer.interval-seconds",
-            "restart.daily", "nametags.enabled");
     private static final Map<String, String> CAPABILITIES = Map.ofEntries(
             Map.entry("perm", "anyplugin.perm"), Map.entry("manage", "anyplugin.manage"), Map.entry("ban", "anyplugin.ban"),
             Map.entry("ipban", "anyplugin.ipban"), Map.entry("unban", "anyplugin.unban"), Map.entry("mute", "anyplugin.mute"),
@@ -145,10 +133,10 @@ public final class AdminChannel implements PluginMessageListener, Listener {
             send(player, denied);
             return;
         }
-        switch (string(message, "type")) {
+        switch (AdminCommands.string(message, "type")) {
             case "hello" -> sendSnapshot(player, message.has("open") && message.get("open").getAsBoolean());
             case "refresh" -> sendSnapshot(player, false);
-            case "player" -> sendPlayer(player, require(message, "name", NAME));
+            case "player" -> sendPlayer(player, AdminCommands.require(message, "name", AdminCommands.NAME));
             case "nodes" -> sendNodes(player);
             case "action" -> action(player, message);
             default -> {
@@ -157,12 +145,12 @@ public final class AdminChannel implements PluginMessageListener, Listener {
     }
 
     private void action(Player player, JsonObject message) {
-        String op = string(message, "op");
+        String op = AdminCommands.string(message, "op");
         if (op.equals("config.set")) {
             setConfig(player, message);
             return;
         }
-        String command = command(op, message);
+        String command = AdminCommands.command(op, message);
         if (command == null) {
             error(player, "invalid");
             return;
@@ -175,106 +163,14 @@ public final class AdminChannel implements PluginMessageListener, Listener {
         plugin.tasks().entityLater(player, 10, () -> sendSnapshot(player, false));
     }
 
-    private String command(String op, JsonObject m) {
-        return switch (op) {
-            case "group.create" -> "perm group " + require(m, "group", GROUP) + " create";
-            case "group.delete" -> "perm group " + require(m, "group", GROUP) + " delete";
-            case "group.set" -> "perm group " + require(m, "group", GROUP) + " set " + node(m) + " " + bool(m, "value");
-            case "group.unset" -> "perm group " + require(m, "group", GROUP) + " unset " + node(m);
-            case "group.parent" -> "perm group " + require(m, "group", GROUP) + " parent " + (bool(m, "add") ? "add " : "remove ")
-                    + require(m, "parent", GROUP);
-            case "group.meta" -> {
-                String field = oneOf(m, "field", "prefix", "suffix", "color", "weight");
-                String value = text(m, "value", 120);
-                if (field.equals("weight")) {
-                    Integer.parseInt(value);
-                }
-                yield "perm group " + require(m, "group", GROUP) + " " + field + " " + (value.isEmpty() ? "clear" : value);
-            }
-            case "user.group" -> "perm user " + require(m, "name", NAME) + " group " + oneOf(m, "mode", "add", "remove", "set") + " "
-                    + require(m, "group", GROUP) + duration(m);
-            case "user.set" -> "perm user " + require(m, "name", NAME) + " set " + node(m) + " " + bool(m, "value") + duration(m);
-            case "user.unset" -> "perm user " + require(m, "name", NAME) + " unset " + node(m);
-            case "user.meta" -> {
-                String value = text(m, "value", 120);
-                yield "perm user " + require(m, "name", NAME) + " " + oneOf(m, "field", "prefix", "suffix") + " " + (value.isEmpty() ? "clear" : value);
-            }
-            case "punish" -> {
-                String kind = oneOf(m, "kind", "ban", "ipban", "mute", "warn", "kick");
-                String reason = text(m, "reason", 200);
-                String duration = kind.equals("warn") || kind.equals("kick") ? "" : duration(m);
-                yield kind + " " + require(m, "name", NAME) + duration + (reason.isEmpty() ? "" : " " + reason);
-            }
-            case "revoke" -> oneOf(m, "kind", "unban", "unmute") + " " + require(m, "name", NAME);
-            case "unwarn" -> "unwarn " + Math.max(1, m.get("id").getAsLong());
-            case "player.gamemode" -> "gm " + oneOf(m, "mode", "survival", "creative", "adventure", "spectator") + " " + require(m, "name", NAME);
-            case "player.heal" -> "heal " + require(m, "name", NAME);
-            case "player.feed" -> "feed " + require(m, "name", NAME);
-            case "player.fly" -> "fly " + require(m, "name", NAME);
-            case "player.freeze" -> "freeze " + require(m, "name", NAME);
-            case "player.tpto" -> "minecraft:tp " + require(m, "name", NAME);
-            case "player.tphere" -> "tphere " + require(m, "name", NAME);
-            case "player.invsee" -> "invsee " + require(m, "name", NAME);
-            case "player.enderchest" -> "enderchest " + require(m, "name", NAME);
-            case "warp.tp" -> "warp " + require(m, "name", WARP);
-            case "warp.delete" -> "delwarp " + require(m, "name", WARP);
-            case "warp.create" -> {
-                String description = text(m, "description", 120);
-                yield "setwarp " + require(m, "name", WARP) + " " + require(m, "icon", ITEM) + (description.isEmpty() ? "" : " " + description);
-            }
-            case "server.maintenance" -> "maintenance " + (bool(m, "value") ? "on" : "off");
-            case "server.restart" -> {
-                String delay = string(m, "delay");
-                if (!delay.equals("cancel") && Durations.parse(delay) <= 0) {
-                    throw new IllegalArgumentException(delay);
-                }
-                yield "restart " + delay;
-            }
-            case "server.broadcast" -> {
-                String value = text(m, "value", 200);
-                if (value.isEmpty()) {
-                    throw new IllegalArgumentException("empty");
-                }
-                yield "broadcast " + value;
-            }
-            case "server.time" -> oneOf(m, "value", "day", "night");
-            case "server.weather" -> oneOf(m, "value", "sun", "rain", "thunder");
-            case "server.vanish" -> "vanish";
-            case "server.reload" -> "anyplugin reload";
-            default -> null;
-        };
-    }
-
     private void setConfig(Player player, JsonObject message) {
         if (!player.hasPermission("anyplugin.manage")) {
             error(player, "denied");
             return;
         }
-        String key = string(message, "key");
+        String key = AdminCommands.string(message, "key");
         Setting setting = settings().stream().filter(s -> s.key().equals(key)).findFirst().orElseThrow(() -> new IllegalArgumentException(key));
-        JsonElement raw = message.get("value");
-        Object value = switch (setting.type()) {
-            case "bool" -> raw.getAsBoolean();
-            case "int" -> raw.getAsInt();
-            case "double" -> raw.getAsDouble();
-            case "list" -> {
-                List<String> list = new ArrayList<>();
-                for (JsonElement element : raw.getAsJsonArray()) {
-                    String item = element.getAsString().strip();
-                    if (!item.isEmpty() && item.length() <= 200) {
-                        list.add(item);
-                    }
-                }
-                yield list;
-            }
-            default -> {
-                String text = raw.getAsString();
-                if (text.length() > 400 || text.indexOf('\n') >= 0) {
-                    throw new IllegalArgumentException(key);
-                }
-                yield text;
-            }
-        };
+        Object value = AdminSettings.parse(setting, message.get("value"));
         plugin.getConfig().set(key, value);
         String yaml = plugin.getConfig().saveToString();
         plugin.tasks().async(() -> {
@@ -300,35 +196,8 @@ public final class AdminChannel implements PluginMessageListener, Listener {
         sendSnapshot(player, false);
     }
 
-    private record Setting(String key, String type, boolean restart) {
-    }
-
     private List<Setting> settings() {
-        List<Setting> out = new ArrayList<>();
-        Configuration defaults = plugin.getConfig().getDefaults();
-        if (defaults == null) {
-            return out;
-        }
-        for (String key : defaults.getKeys(true)) {
-            if (defaults.isConfigurationSection(key) || SKIPPED_SETTINGS.stream().anyMatch(skip -> key.equals(skip) || key.startsWith(skip + "."))) {
-                continue;
-            }
-            Object value = defaults.get(key);
-            String type;
-            if (value instanceof Boolean) {
-                type = "bool";
-            } else if (value instanceof Integer || value instanceof Long) {
-                type = "int";
-            } else if (value instanceof Double || value instanceof Float) {
-                type = "double";
-            } else if (value instanceof List<?>) {
-                type = "list";
-            } else {
-                type = "string";
-            }
-            out.add(new Setting(key, type, key.startsWith("modules.") || RESTART_SETTINGS.contains(key)));
-        }
-        return out;
+        return AdminSettings.of(plugin.getConfig().getDefaults());
     }
 
     public void sendSnapshot(Player player, boolean open) {
@@ -588,67 +457,5 @@ public final class AdminChannel implements PluginMessageListener, Listener {
 
     static String decode(byte[] data) {
         return new String(data, StandardCharsets.UTF_8);
-    }
-
-    private static String string(JsonObject m, String key) {
-        JsonElement element = m.get(key);
-        if (element == null || !element.isJsonPrimitive()) {
-            throw new IllegalArgumentException(key);
-        }
-        return element.getAsString();
-    }
-
-    private static String require(JsonObject m, String key, Pattern pattern) {
-        String value = string(m, key);
-        if (!pattern.matcher(value).matches()) {
-            throw new IllegalArgumentException(key);
-        }
-        return value;
-    }
-
-    private static String node(JsonObject m) {
-        return require(m, "node", NODE);
-    }
-
-    private static boolean bool(JsonObject m, String key) {
-        JsonElement element = m.get(key);
-        if (element == null || !element.isJsonPrimitive()) {
-            throw new IllegalArgumentException(key);
-        }
-        return element.getAsBoolean();
-    }
-
-    private static String oneOf(JsonObject m, String key, String... options) {
-        String value = string(m, key).toLowerCase(Locale.ROOT);
-        for (String option : options) {
-            if (option.equals(value)) {
-                return value;
-            }
-        }
-        throw new IllegalArgumentException(key);
-    }
-
-    private static String text(JsonObject m, String key, int max) {
-        JsonElement element = m.get(key);
-        if (element == null || element.isJsonNull()) {
-            return "";
-        }
-        String value = element.getAsString().replace('\n', ' ').replace('\r', ' ').strip();
-        if (value.length() > max) {
-            throw new IllegalArgumentException(key);
-        }
-        return value;
-    }
-
-    private static String duration(JsonObject m) {
-        JsonElement element = m.get("duration");
-        if (element == null || element.isJsonNull() || element.getAsString().isBlank()) {
-            return "";
-        }
-        String value = element.getAsString().strip();
-        if (Durations.parse(value) <= 0) {
-            throw new IllegalArgumentException("duration");
-        }
-        return " " + value;
     }
 }

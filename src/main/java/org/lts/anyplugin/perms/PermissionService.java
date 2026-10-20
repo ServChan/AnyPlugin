@@ -1,16 +1,10 @@
 package org.lts.anyplugin.perms;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.bukkit.Bukkit;
@@ -202,55 +196,7 @@ public final class PermissionService implements Listener {
         if (!internal) {
             return external(data);
         }
-        long now = System.currentTimeMillis();
-        List<Group> direct = new ArrayList<>();
-        direct.add(groups.defaultGroup());
-        for (Node node : data.nodes) {
-            if (node.isGroup() && node.value() && !node.expired(now)) {
-                Group group = groups.get(node.node());
-                if (group != null && !direct.contains(group)) {
-                    direct.add(group);
-                }
-            }
-        }
-        Set<Group> closure = new HashSet<>();
-        Deque<Group> stack = new ArrayDeque<>(direct);
-        while (!stack.isEmpty()) {
-            Group group = stack.pop();
-            if (!closure.add(group)) {
-                continue;
-            }
-            for (String parent : group.parents) {
-                Group p = groups.get(parent);
-                if (p != null && !closure.contains(p)) {
-                    stack.push(p);
-                }
-            }
-        }
-        List<Group> ordered = new ArrayList<>(closure);
-        ordered.sort(Comparator.comparingInt((Group g) -> g.weight).thenComparing(g -> g.name));
-        LinkedHashMap<String, Boolean> nodes = new LinkedHashMap<>();
-        for (Group group : ordered) {
-            group.permissions.forEach((node, value) -> put(nodes, node, value));
-        }
-        for (Node node : data.nodes) {
-            if (!node.isGroup() && !node.expired(now)) {
-                put(nodes, node.node(), node.value());
-            }
-        }
-        Group primary = direct.stream().max(Comparator.comparingInt((Group g) -> g.weight)).orElse(groups.defaultGroup());
-        String prefix = data.prefix;
-        String suffix = data.suffix;
-        for (int i = ordered.size() - 1; i >= 0 && (prefix == null || suffix == null); i--) {
-            Group group = ordered.get(i);
-            if (prefix == null && !group.prefix.isEmpty()) {
-                prefix = group.prefix;
-            }
-            if (suffix == null && !group.suffix.isEmpty()) {
-                suffix = group.suffix;
-            }
-        }
-        return new Resolved(ordered, primary, nodes, prefix == null ? "" : prefix, suffix == null ? "" : suffix);
+        return PermissionResolver.resolve(groups.defaultGroup(), groups::get, data.nodes, data.prefix, data.suffix, System.currentTimeMillis());
     }
 
     private Resolved external(PlayerData data) {
@@ -275,50 +221,8 @@ public final class PermissionService implements Listener {
         return new Resolved(List.of(group), group, Map.of(), prefix == null ? "" : prefix, suffix == null ? "" : suffix);
     }
 
-    private static void put(LinkedHashMap<String, Boolean> map, String node, boolean value) {
-        map.remove(node);
-        map.put(node, value);
-    }
-
     private Map<String, Boolean> expand(Map<String, Boolean> nodes) {
-        LinkedHashMap<String, Boolean> out = new LinkedHashMap<>();
-        List<Map.Entry<String, Boolean>> wildcards = new ArrayList<>();
-        for (Map.Entry<String, Boolean> entry : nodes.entrySet()) {
-            if (entry.getKey().equals("*") || entry.getKey().endsWith(".*")) {
-                wildcards.add(entry);
-            }
-        }
-        wildcards.sort(Comparator.comparingInt(e -> depth(e.getKey())));
-        List<String> known = registered;
-        for (Map.Entry<String, Boolean> wildcard : wildcards) {
-            String key = wildcard.getKey();
-            String base = key.equals("*") ? "" : key.substring(0, key.length() - 1);
-            for (String name : known) {
-                if (name.startsWith(base)) {
-                    put(out, name, wildcard.getValue());
-                }
-            }
-            put(out, key, wildcard.getValue());
-        }
-        for (Map.Entry<String, Boolean> entry : nodes.entrySet()) {
-            if (!entry.getKey().equals("*") && !entry.getKey().endsWith(".*")) {
-                put(out, entry.getKey(), entry.getValue());
-            }
-        }
-        return out;
-    }
-
-    private static int depth(String node) {
-        if (node.equals("*")) {
-            return 0;
-        }
-        int count = 1;
-        for (int i = 0; i < node.length(); i++) {
-            if (node.charAt(i) == '.') {
-                count++;
-            }
-        }
-        return count;
+        return PermissionResolver.expand(nodes, registered);
     }
 
     public boolean hasOffline(UUID uuid, PlayerData data, String node) {

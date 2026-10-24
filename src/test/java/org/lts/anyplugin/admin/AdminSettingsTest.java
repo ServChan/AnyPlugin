@@ -68,6 +68,12 @@ class AdminSettingsTest {
     }
 
     @Test
+    void rejectsMissingValue() {
+        assertThrows(IllegalArgumentException.class, () -> AdminSettings.parse(new Setting("key", "bool", false), null));
+        assertThrows(IllegalArgumentException.class, () -> parse("string", "null"));
+    }
+
+    @Test
     void stringRejectsNewlinesAndOversizeText() {
         assertThrows(IllegalArgumentException.class, () -> parse("string", "'a\\nb'"));
         assertThrows(IllegalArgumentException.class, () -> parse("string", "'" + "x".repeat(401) + "'"));

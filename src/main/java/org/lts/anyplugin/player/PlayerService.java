@@ -36,6 +36,7 @@ public final class PlayerService implements Listener {
 
     private final AnyPlugin plugin;
     private final Map<UUID, PlayerData> online = new ConcurrentHashMap<>();
+    private final Map<UUID, PlayerData> preloaded = new ConcurrentHashMap<>();
     private final AtomicInteger uniquePlayers = new AtomicInteger();
 
     public PlayerService(AnyPlugin plugin) {
@@ -100,16 +101,22 @@ public final class PlayerService implements Listener {
             event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, plugin.msg().get("maintenance.kick"));
             return;
         }
-        online.put(uuid, data);
+        preloaded.put(uuid, data);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPreLoginResult(AsyncPlayerPreLoginEvent event) {
         if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) {
-            UUID uuid = event.getUniqueId();
-            if (Bukkit.getPlayer(uuid) == null) {
-                online.remove(uuid);
-            }
+            preloaded.remove(event.getUniqueId());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onJoinFirst(PlayerJoinEvent event) {
+        UUID uuid = event.getPlayer().getUniqueId();
+        PlayerData loaded = preloaded.remove(uuid);
+        if (loaded != null) {
+            online.put(uuid, loaded);
         }
     }
 
@@ -138,6 +145,10 @@ public final class PlayerService implements Listener {
             data.sessionStart = 0;
         }
         data.lastSeen = now;
+        PlayerData next = preloaded.get(data.uuid);
+        if (next != null) {
+            next.playtime = data.playtime;
+        }
         plugin.db().update("UPDATE players SET playtime=?, last_seen=? WHERE uuid=?", data.playtime, now, data.uuid.toString())
                 .whenComplete((r, e) -> online.remove(data.uuid, data));
     }

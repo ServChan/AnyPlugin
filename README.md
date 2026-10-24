@@ -8,7 +8,7 @@
 
 ## Установка
 
-1. Положите `build/libs/AnyPlugin-1.0.1.jar` в `plugins/` и запустите сервер.
+1. Положите `build/libs/AnyPlugin-1.0.2.jar` в `plugins/` и запустите сервер.
 2. В `plugins/AnyPlugin/` появятся `config.yml`, `groups.yml` и `messages_ru.yml`.
 3. Встаньте на спавн и выполните `/setspawn`, затем создайте варпы через `/setwarp`.
 4. Выдайте себе группу: `/perm user <ник> group set admin` (из консоли или будучи оператором).

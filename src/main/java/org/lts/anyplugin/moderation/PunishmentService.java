@@ -20,6 +20,7 @@ import org.lts.anyplugin.chat.ChatService;
 import org.lts.anyplugin.core.Durations;
 import org.lts.anyplugin.core.Text;
 import org.lts.anyplugin.player.PlayerData;
+import org.lts.anyplugin.player.PlayerService;
 
 import static org.lts.anyplugin.core.Messages.p;
 
@@ -27,6 +28,8 @@ public final class PunishmentService {
 
     public record Target(UUID uuid, String name, String ip) {
     }
+
+    public static final String EXEMPT = "anyplugin.punish.exempt";
 
     private final AnyPlugin plugin;
 
@@ -223,9 +226,22 @@ public final class PunishmentService {
         return result;
     }
 
-    public CompletableFuture<Integer> revokeById(long id, CommandSender actor) {
+    public CompletableFuture<Integer> revokeWarn(long id, CommandSender actor) {
         String actorName = actor instanceof Player ? actor.getName() : plugin.msg().raw("punish.console-name");
-        return plugin.db().update("UPDATE punishments SET active=0, removed_by=?, removed_at=? WHERE id=? AND active=1", actorName, System.currentTimeMillis(), id);
+        return plugin.db().update("UPDATE punishments SET active=0, removed_by=?, removed_at=? WHERE id=? AND type='warn' AND active=1",
+                actorName, System.currentTimeMillis(), id);
+    }
+
+    public CompletableFuture<Boolean> exempt(UUID uuid) {
+        Player online = Bukkit.getPlayer(uuid);
+        if (online != null) {
+            return CompletableFuture.completedFuture(online.hasPermission(EXEMPT));
+        }
+        return plugin.db().call(c -> PlayerService.loadNodes(c, uuid)).thenApply(nodes -> {
+            PlayerData data = new PlayerData(uuid, "");
+            data.nodes.addAll(nodes);
+            return plugin.perms().hasOffline(uuid, data, EXEMPT);
+        });
     }
 
     public CompletableFuture<List<Punishment>> history(UUID uuid, int limit) {

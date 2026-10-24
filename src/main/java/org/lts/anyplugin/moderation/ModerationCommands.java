@@ -1,6 +1,7 @@
 package org.lts.anyplugin.moderation;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -44,7 +45,7 @@ public final class ModerationCommands {
         r.cmd("warn").perm("anyplugin.warn").exec(ctx -> punish(ctx, Punishment.Type.WARN, false, false)).tab(this::punishTab);
         r.cmd("unwarn").alias("delwarn").perm("anyplugin.unwarn").exec(ctx -> {
             long id = ctx.integer(0, 1, Integer.MAX_VALUE);
-            service.revokeById(id, ctx.sender).thenAccept(count -> ctx.send(count > 0 ? "punish.unwarned" : "punish.unwarn-missing", p("id", id)));
+            service.revokeWarn(id, ctx.sender).thenAccept(count -> ctx.send(count > 0 ? "punish.unwarned" : "punish.unwarn-missing", p("id", id)));
         });
         r.cmd("warnings").alias("warns").perm("anyplugin.warnings").exec(this::warnings)
                 .tab(ctx -> ctx.index() == 0 && ctx.has("anyplugin.warnings.others") ? CommandRegistry.players(ctx.sender) : List.of());
@@ -77,7 +78,7 @@ public final class ModerationCommands {
             if (actor.equals(target)) {
                 throw new CmdException("punish.self");
             }
-            if (target.hasPermission("anyplugin.punish.exempt")) {
+            if (target.hasPermission(PunishmentService.EXEMPT)) {
                 throw new CmdException("punish.exempt", p("player", target.getName()));
             }
         }
@@ -134,13 +135,21 @@ public final class ModerationCommands {
                 ctx.send("punish.no-ip", p("player", target.name()));
                 return;
             }
-            service.punish(target, type, finalReason, finalDuration, ctx.sender)
-                    .thenAccept(done -> ctx.send("punish.done." + type.key(), service.resolvers(done)))
-                    .exceptionally(e -> {
-                        plugin.getLogger().warning("Punishment failed: " + e);
-                        ctx.send("errors.internal");
-                        return null;
-                    });
+            CompletableFuture<Boolean> exempt = ctx.sender instanceof Player
+                    ? service.exempt(target.uuid())
+                    : CompletableFuture.completedFuture(false);
+            exempt.thenCompose(blocked -> {
+                if (blocked) {
+                    ctx.send("punish.exempt", p("player", target.name()));
+                    return CompletableFuture.completedFuture(null);
+                }
+                return service.punish(target, type, finalReason, finalDuration, ctx.sender)
+                        .thenAccept(done -> ctx.send("punish.done." + type.key(), service.resolvers(done)));
+            }).exceptionally(e -> {
+                plugin.getLogger().warning("Punishment failed: " + e);
+                ctx.send("errors.internal");
+                return null;
+            });
         });
     }
 

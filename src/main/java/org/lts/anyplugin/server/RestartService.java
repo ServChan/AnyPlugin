@@ -30,26 +30,26 @@ public final class RestartService implements Listener {
     private final BossBar bar = BossBar.bossBar(Component.empty(), 1f, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
     private volatile boolean barShown;
     private volatile boolean stopping;
+    private volatile boolean daily;
 
     public RestartService(AnyPlugin plugin) {
         this.plugin = plugin;
     }
 
     public void start() {
-        scheduleDaily();
+        scheduleDaily(LocalDateTime.now());
         plugin.tasks().globalTimer(20, 20, this::tick);
     }
 
-    private void scheduleDaily() {
+    private void scheduleDaily(LocalDateTime after) {
         List<String> times = plugin.getConfig().getStringList("restart.daily");
         long now = System.currentTimeMillis();
         long best = 0;
-        LocalDateTime current = LocalDateTime.now();
         for (String raw : times) {
             try {
                 LocalTime time = LocalTime.parse(raw.trim());
-                LocalDateTime next = current.toLocalDate().atTime(time);
-                if (!next.isAfter(current.plusMinutes(1))) {
+                LocalDateTime next = after.toLocalDate().atTime(time);
+                if (!next.isAfter(after.plusMinutes(1))) {
                     next = next.plusDays(1);
                 }
                 long millis = next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
@@ -62,10 +62,13 @@ public final class RestartService implements Listener {
         }
         if (best > now) {
             schedule(best, plugin.msg().raw("restart.daily-reason"));
+            daily = true;
         }
     }
 
     private void schedule(long when, String why) {
+        hideBar();
+        daily = false;
         target = when;
         scheduledFor = when - System.currentTimeMillis();
         reason = why == null ? "" : why;
@@ -95,9 +98,15 @@ public final class RestartService implements Listener {
                 if (target == 0) {
                     throw new CmdException("restart.none");
                 }
+                long cancelled = target;
+                boolean wasDaily = daily;
                 target = 0;
+                daily = false;
                 hideBar();
                 Bukkit.getServer().sendMessage(plugin.msg().get("restart.cancelled"));
+                if (wasDaily) {
+                    scheduleDaily(LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(cancelled), ZoneId.systemDefault()));
+                }
             }
             case "now" -> {
                 schedule(System.currentTimeMillis() + 5_000, ctx.joinedOpt(1));

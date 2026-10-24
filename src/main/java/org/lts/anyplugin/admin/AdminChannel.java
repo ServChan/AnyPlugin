@@ -105,7 +105,7 @@ public final class AdminChannel implements PluginMessageListener, Listener {
         plugin.tasks().entity(player, () -> {
             try {
                 handle(player, message);
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException | IllegalStateException | UnsupportedOperationException e) {
                 error(player, "invalid");
             } catch (RuntimeException e) {
                 plugin.getLogger().log(Level.WARNING, "Admin request from " + player.getName() + " failed", e);
@@ -217,7 +217,7 @@ public final class AdminChannel implements PluginMessageListener, Listener {
         server.addProperty("folia", Tasks.FOLIA);
         server.addProperty("tps", ServerStats.tps());
         server.addProperty("mspt", ServerStats.mspt());
-        server.addProperty("online", Bukkit.getOnlinePlayers().size());
+        server.addProperty("online", player.hasPermission("anyplugin.vanish.see") ? Bukkit.getOnlinePlayers().size() : plugin.players().visibleCount());
         server.addProperty("max", Bukkit.getMaxPlayers());
         server.addProperty("unique", plugin.players().uniquePlayers());
         server.addProperty("uptime", ServerStats.uptimeMillis());
@@ -252,6 +252,9 @@ public final class AdminChannel implements PluginMessageListener, Listener {
         List<Player> players = new ArrayList<>(Bukkit.getOnlinePlayers());
         players.sort((a, b) -> a.getName().compareToIgnoreCase(b.getName()));
         for (Player other : players) {
+            if (!plugin.players().canSee(player, other)) {
+                continue;
+            }
             PlayerData data = plugin.players().data(other.getUniqueId());
             JsonObject p = new JsonObject();
             p.addProperty("name", other.getName());

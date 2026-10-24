@@ -60,8 +60,13 @@ public final class StarterKit implements Listener {
                 } catch (NumberFormatException ignored) {
                 }
             }
-            ItemStack item = new ItemStack(material, Math.min(amount, material.getMaxStackSize()));
-            player.getInventory().addItem(item).values().forEach(rest -> player.getWorld().dropItemNaturally(player.getLocation(), rest));
+            int left = Math.min(amount, material.getMaxStackSize() * 36);
+            while (left > 0) {
+                int stack = Math.min(left, material.getMaxStackSize());
+                player.getInventory().addItem(new ItemStack(material, stack)).values()
+                        .forEach(rest -> player.getWorld().dropItemNaturally(player.getLocation(), rest));
+                left -= stack;
+            }
         }
         plugin.msg().send(player, "kit.received");
     }

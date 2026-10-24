@@ -520,6 +520,7 @@ freeze:
   notify-off: "<dark_gray>[Freeze] <actor> unfroze <player>"
   blocked: "<pfx><red>You can't use this command while frozen."
   quit: "<red>[Freeze] <player> left the game while frozen!"
+  rejoin: "<red>[Freeze] <player> is back and still frozen"
   self: "<pfx><red>You can't freeze yourself."
 
 spy:

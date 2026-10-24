@@ -301,11 +301,16 @@ public final class TeleportService implements Listener {
     }
 
     private static double parse(Ctx ctx, String raw) {
+        double value;
         try {
-            return Double.parseDouble(raw.replace(',', '.'));
+            value = Double.parseDouble(raw.replace(',', '.'));
         } catch (NumberFormatException e) {
             throw ctx.fail("errors.number", p("value", raw));
         }
+        if (!Double.isFinite(value) || Math.abs(value) > 30_000_000) {
+            throw ctx.fail("errors.number", p("value", raw));
+        }
+        return value;
     }
 
     public void instant(Player player, Location location) {

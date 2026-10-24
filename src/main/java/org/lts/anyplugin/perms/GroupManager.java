@@ -21,6 +21,7 @@ public final class GroupManager {
     private final File file;
     private final Map<String, Group> groups = new ConcurrentHashMap<>();
     private volatile String defaultGroup = "default";
+    private volatile String pendingSave;
 
     public GroupManager(AnyPlugin plugin) {
         this.plugin = plugin;
@@ -92,16 +93,23 @@ public final class GroupManager {
             new TreeMap<>(group.permissions).forEach((node, value) -> nodes.add(value ? node : "-" + node));
             yaml.set(path + "permissions", nodes);
         }
-        String data = yaml.saveToString();
-        plugin.tasks().async(() -> {
-            synchronized (this) {
-                try {
-                    java.nio.file.Files.writeString(file.toPath(), data);
-                } catch (IOException e) {
-                    plugin.getLogger().log(Level.WARNING, "Could not save groups.yml", e);
-                }
-            }
-        });
+        synchronized (this) {
+            pendingSave = yaml.saveToString();
+        }
+        plugin.tasks().async(this::writePending);
+    }
+
+    private synchronized void writePending() {
+        String data = pendingSave;
+        if (data == null) {
+            return;
+        }
+        pendingSave = null;
+        try {
+            java.nio.file.Files.writeString(file.toPath(), data);
+        } catch (IOException e) {
+            plugin.getLogger().log(Level.WARNING, "Could not save groups.yml", e);
+        }
     }
 
     public Group get(String name) {

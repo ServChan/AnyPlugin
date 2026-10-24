@@ -70,7 +70,11 @@ public final class TpaService implements Listener {
         }
         long timeout = plugin.getConfig().getLong("teleport.tpa-timeout-seconds", 60) * 1000;
         Request request = new Request(player.getUniqueId(), target.getUniqueId(), here, System.currentTimeMillis() + timeout);
-        incoming.computeIfAbsent(target.getUniqueId(), k -> new LinkedHashMap<>()).put(player.getUniqueId(), request);
+        Map<UUID, Request> requests = incoming.computeIfAbsent(target.getUniqueId(), k -> new LinkedHashMap<>());
+        synchronized (requests) {
+            requests.remove(player.getUniqueId());
+            requests.put(player.getUniqueId(), request);
+        }
         String name = player.getName();
         target.sendMessage(plugin.msg().get(here ? "tpa.request-here" : "tpa.request",
                 c("player", player.displayName()),

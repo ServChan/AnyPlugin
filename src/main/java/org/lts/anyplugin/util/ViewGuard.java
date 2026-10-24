@@ -48,10 +48,10 @@ public final class ViewGuard implements Listener {
     public void openOther(Player viewer, Player owner, Inventory live, Component title, boolean editable) {
         boolean sameRegion = !Tasks.FOLIA || Bukkit.isOwnedByCurrentRegion(owner);
         if (sameRegion) {
+            viewer.openInventory(live);
             if (!editable) {
                 readOnly.put(viewer.getUniqueId(), live);
             }
-            viewer.openInventory(live);
             return;
         }
         plugin.tasks().entity(owner, () -> {

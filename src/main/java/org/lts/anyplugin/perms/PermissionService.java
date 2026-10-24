@@ -241,7 +241,7 @@ public final class PermissionService implements Listener {
             return value;
         }
         Permission permission = Bukkit.getPluginManager().getPermission(node);
-        return permission != null && permission.getDefault() == PermissionDefault.TRUE;
+        return permission != null && permission.getDefault().getValue(false);
     }
 
     private void walk(String name, boolean value, Map<String, Boolean> out, int depth) {

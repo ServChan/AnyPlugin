@@ -44,6 +44,7 @@ public final class PermCommands {
             case "check" -> check(ctx);
             case "reload" -> {
                 service.groups().load();
+                service.refreshRegistered();
                 service.applyAll();
                 ctx.send("perm.reloaded");
             }
@@ -75,8 +76,10 @@ public final class PermCommands {
         switch (action) {
             case "info" -> withUser(ctx, name, (uuid, realName) -> userInfo(ctx, uuid, realName));
             case "set" -> {
-                String node = ctx.arg(3).toLowerCase(Locale.ROOT);
-                boolean value = !ctx.present(4) || Boolean.parseBoolean(ctx.arg(4));
+                String raw = ctx.arg(3).toLowerCase(Locale.ROOT);
+                boolean negated = raw.startsWith("-") && raw.length() > 1;
+                String node = negated ? raw.substring(1) : raw;
+                boolean value = ctx.present(4) ? Boolean.parseBoolean(ctx.arg(4)) : !negated;
                 Long expires = ctx.present(5) ? System.currentTimeMillis() + ctx.duration(5) : null;
                 withUser(ctx, name, (uuid, realName) -> {
                     service.setNode(uuid, new Node(Node.PERM, node, value, expires));
@@ -234,7 +237,11 @@ public final class PermCommands {
             }
             case "set" -> {
                 String node = ctx.arg(3).toLowerCase(Locale.ROOT);
-                boolean value = !ctx.present(4) || Boolean.parseBoolean(ctx.arg(4));
+                boolean negated = node.startsWith("-") && node.length() > 1;
+                if (negated) {
+                    node = node.substring(1);
+                }
+                boolean value = ctx.present(4) ? Boolean.parseBoolean(ctx.arg(4)) : !negated;
                 group.permissions.put(node, value);
                 ctx.send("perm.group-set", p("group", name), p("node", node), p("value", value));
             }

@@ -3,6 +3,7 @@ package org.lts.anyplugin.moderation;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.text.Component;
@@ -21,6 +22,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.lts.anyplugin.AnyPlugin;
@@ -41,6 +43,7 @@ public final class StaffService implements Listener {
     private final AnyPlugin plugin;
     private final ViewGuard views;
     private final Map<UUID, Long> reportCooldown = new ConcurrentHashMap<>();
+    private final Set<UUID> frozenOffline = ConcurrentHashMap.newKeySet();
 
     public StaffService(AnyPlugin plugin, ViewGuard views) {
         this.plugin = plugin;
@@ -66,7 +69,7 @@ public final class StaffService implements Listener {
             if (ctx.sender instanceof Player actor && actor.equals(target)) {
                 throw new CmdException("freeze.self");
             }
-            if (target.hasPermission("anyplugin.punish.exempt") && ctx.sender instanceof Player) {
+            if (target.hasPermission(PunishmentService.EXEMPT) && ctx.sender instanceof Player) {
                 throw new CmdException("punish.exempt", p("player", target.getName()));
             }
             PlayerData data = plugin.players().data(target);
@@ -273,10 +276,20 @@ public final class StaffService implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.LOW)
+    public void onJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        if (frozenOffline.remove(player.getUniqueId())) {
+            plugin.players().data(player).frozen = true;
+            plugin.msg().send(player, "freeze.frozen");
+            ChatService.broadcastPermission("anyplugin.freeze", plugin.msg().get("freeze.rejoin", p("player", player.getName())));
+        }
+    }
+
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        reportCooldown.remove(event.getPlayer().getUniqueId());
         if (frozen(event.getPlayer())) {
+            frozenOffline.add(event.getPlayer().getUniqueId());
             ChatService.broadcastPermission("anyplugin.freeze", plugin.msg().get("freeze.quit", p("player", event.getPlayer().getName())));
         }
     }

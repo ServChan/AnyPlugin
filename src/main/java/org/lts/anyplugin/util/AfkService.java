@@ -134,8 +134,9 @@ public final class AfkService implements Listener {
     public void onDamage(EntityDamageEvent event) {
         if (event.getEntity() instanceof Player player) {
             PlayerData data = plugin.players().data(player.getUniqueId());
-            if (data != null && data.god && event.getCause() != EntityDamageEvent.DamageCause.KILL
-                    && event.getCause() != EntityDamageEvent.DamageCause.WORLD_BORDER) {
+            EntityDamageEvent.DamageCause cause = event.getCause();
+            if (data != null && data.god && cause != EntityDamageEvent.DamageCause.KILL && cause != EntityDamageEvent.DamageCause.WORLD_BORDER
+                    && cause != EntityDamageEvent.DamageCause.VOID) {
                 event.setCancelled(true);
             }
         }

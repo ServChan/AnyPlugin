@@ -32,6 +32,7 @@ import org.lts.anyplugin.command.CmdException;
 import org.lts.anyplugin.command.CommandRegistry;
 import org.lts.anyplugin.command.Ctx;
 import org.lts.anyplugin.core.Text;
+import org.lts.anyplugin.moderation.Punishment;
 import org.lts.anyplugin.perms.Group;
 import org.lts.anyplugin.player.PlayerData;
 
@@ -96,10 +97,10 @@ public final class ChatService implements Listener {
         Player player = event.getPlayer();
         PlayerData data = plugin.players().data(player);
         data.lastActivity = System.currentTimeMillis();
-        if (data.muted()) {
+        Punishment mute = activeMute(data);
+        if (mute != null) {
             event.setCancelled(true);
-            plugin.msg().send(player, "mute.chat-blocked", p("reason", data.mute.reason()),
-                    p("remaining", data.mute.expires() == null ? plugin.msg().raw("time.forever") : plugin.msg().duration(data.mute.expires() - System.currentTimeMillis())));
+            plugin.msg().send(player, "mute.chat-blocked", muteResolvers(mute));
             return;
         }
         String text = Text.plain(event.message());
@@ -135,6 +136,17 @@ public final class ChatService implements Listener {
         Component line = render(player, body);
         event.viewers().removeIf(viewer -> viewer instanceof Player p && ignores(p, player));
         event.renderer(ChatRenderer.viewerUnaware((source, displayName, message) -> line));
+    }
+
+    private static Punishment activeMute(PlayerData data) {
+        Punishment mute = data.mute;
+        return mute != null && data.muted() ? mute : null;
+    }
+
+    private TagResolver muteResolvers(Punishment mute) {
+        String reason = mute.reason() == null || mute.reason().isEmpty() ? plugin.msg().raw("punish.no-reason") : mute.reason();
+        String remaining = mute.expires() == null ? plugin.msg().raw("time.forever") : plugin.msg().duration(mute.expires() - System.currentTimeMillis());
+        return TagResolver.resolver(p("reason", reason), p("remaining", remaining));
     }
 
     private boolean isStaffPrefix(Player player, String text) {
@@ -183,21 +195,15 @@ public final class ChatService implements Listener {
         if (!cfg().getBoolean("chat.mentions", true)) {
             return body;
         }
-        String plain = Text.plain(body).toLowerCase(Locale.ROOT);
-        List<Player> mentioned = new ArrayList<>();
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.equals(sender) || !plugin.players().canSee(sender, player)) {
+        String plain = Text.plain(body);
+        for (Player target : Bukkit.getOnlinePlayers()) {
+            if (target.equals(sender) || !plugin.players().canSee(sender, target)) {
                 continue;
             }
-            if (plain.contains(player.getName().toLowerCase(Locale.ROOT))) {
-                mentioned.add(player);
-            }
-        }
-        if (mentioned.isEmpty()) {
-            return body;
-        }
-        for (Player target : mentioned) {
             Pattern pattern = Pattern.compile("(?i)@?(?<![\\w])" + Pattern.quote(target.getName()) + "(?![\\w])");
+            if (!pattern.matcher(plain).find()) {
+                continue;
+            }
             body = body.replaceText(TextReplacementConfig.builder().match(pattern)
                     .replacement(match -> plugin.msg().get("chat.mention", p("player", target.getName()))).build());
             if (!ignores(target, sender)) {
@@ -296,9 +302,9 @@ public final class ChatService implements Listener {
                 throw new CmdException("msg.self");
             }
             PlayerData data = plugin.players().data(player);
-            if (data.muted() && cfg().getBoolean("chat.mute-blocks-pm", true)) {
-                throw new CmdException("mute.chat-blocked", p("reason", data.mute.reason()),
-                        p("remaining", data.mute.expires() == null ? plugin.msg().raw("time.forever") : plugin.msg().duration(data.mute.expires() - System.currentTimeMillis())));
+            Punishment mute = activeMute(data);
+            if (mute != null && cfg().getBoolean("chat.mute-blocks-pm", true)) {
+                throw new CmdException("mute.chat-blocked", muteResolvers(mute));
             }
             PlayerData targetData = plugin.players().data(target);
             if (targetData.msgToggle && !player.hasPermission("anyplugin.msgtoggle.bypass")) {

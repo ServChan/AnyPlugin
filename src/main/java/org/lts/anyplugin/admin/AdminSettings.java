@@ -49,6 +49,9 @@ final class AdminSettings {
     }
 
     static Object parse(Setting setting, JsonElement raw) {
+        if (raw == null || raw.isJsonNull()) {
+            throw new IllegalArgumentException(setting.key());
+        }
         return switch (setting.type()) {
             case "bool" -> raw.getAsBoolean();
             case "int" -> raw.getAsInt();

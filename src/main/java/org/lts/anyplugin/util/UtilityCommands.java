@@ -357,7 +357,7 @@ public final class UtilityCommands {
         if (material == null || !material.isItem() || material.isAir()) {
             throw new CmdException("utility.item-unknown", p("item", ctx.arg(0)));
         }
-        int amount = ctx.present(1) ? ctx.integer(1, 1, 64 * 36) : material.getMaxStackSize();
+        int amount = ctx.present(1) ? ctx.integer(1, 1, material.getMaxStackSize() * 36) : material.getMaxStackSize();
         int left = amount;
         while (left > 0) {
             int stack = Math.min(left, material.getMaxStackSize());
@@ -440,7 +440,8 @@ public final class UtilityCommands {
     }
 
     private void list(Ctx ctx) {
-        Map<Group, List<Player>> grouped = new LinkedHashMap<>();
+        Map<String, Group> groups = new LinkedHashMap<>();
+        Map<String, List<Player>> grouped = new LinkedHashMap<>();
         int visible = 0;
         List<Player> players = new ArrayList<>(Bukkit.getOnlinePlayers());
         players.sort(Comparator.comparing(Player::getName, String.CASE_INSENSITIVE_ORDER));
@@ -449,14 +450,16 @@ public final class UtilityCommands {
                 continue;
             }
             visible++;
-            grouped.computeIfAbsent(plugin.perms().primary(player), g -> new ArrayList<>()).add(player);
+            Group group = plugin.perms().primary(player);
+            groups.putIfAbsent(group.name, group);
+            grouped.computeIfAbsent(group.name, g -> new ArrayList<>()).add(player);
         }
         ctx.send("list.header", p("online", visible), p("max", Bukkit.getMaxPlayers()));
-        List<Group> order = new ArrayList<>(grouped.keySet());
+        List<Group> order = new ArrayList<>(groups.values());
         order.sort(Comparator.comparingInt((Group g) -> g.weight).reversed());
         for (Group group : order) {
             List<Component> names = new ArrayList<>();
-            for (Player player : grouped.get(group)) {
+            for (Player player : grouped.get(group.name)) {
                 PlayerData data = plugin.players().data(player);
                 Component name = player.displayName();
                 if (data.afk) {
@@ -591,7 +594,12 @@ public final class UtilityCommands {
             throw new CmdException("nick.invalid", p("max", maxLength));
         }
         for (Player other : Bukkit.getOnlinePlayers()) {
-            if (!other.equals(target) && other.getName().equalsIgnoreCase(plain)) {
+            if (other.equals(target)) {
+                continue;
+            }
+            PlayerData otherData = plugin.players().data(other.getUniqueId());
+            boolean nickTaken = otherData != null && otherData.nick != null && Text.stripTags(otherData.nick).equalsIgnoreCase(plain);
+            if (other.getName().equalsIgnoreCase(plain) || nickTaken) {
                 throw new CmdException("nick.taken", p("nick", plain));
             }
         }

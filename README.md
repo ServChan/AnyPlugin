@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/icon.png" width="96" alt="AnyPlugin icon"></p>
+
 # AnyPlugin
 
 [![Minecraft Version](https://img.shields.io/badge/Minecraft-26.3-brightgreen?style=flat-square&logo=minecraft)](README.md)
